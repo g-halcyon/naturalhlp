@@ -14,8 +14,8 @@ A high-level programming language that allows you to write code in natural langu
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/nhlp.git
-cd nhlp
+git clone https://github.com/g-halcyon/naturalhlp.git
+cd naturalhlp
 ```
 
 2. Create a `.env` file in the project root and add your Gemini API key:
@@ -63,7 +63,7 @@ g++ your_file.cpp -o your_file
 ## Project Structure
 
 ```
-nhlp/
+naturalhlp/
 ├── src/
 │   ├── main.rs           # Main entry point
 │   ├── compiler.rs       # Compiler implementation
