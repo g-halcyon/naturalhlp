@@ -1,0 +1,4 @@
+Create an array of integers with the values 10, 20, 30, 40, and 50.
+Calculate the sum of all elements in the array.
+Print the sum to the console with a message saying "The sum is: ".
+Bonus: Calculate and print the average of the array elements too. 

@@ -1,0 +1,17 @@
+// Test file for DSHPC compiler with Gemini 2.0 Flash
+// This example demonstrates basic arithmetic operations and string manipulation
+
+Create a function that adds two numbers together and returns the result.
+Name this function "calculate_sum".
+It should take two numbers as input and return a number.
+
+Create a function that creates a greeting message.
+Name this function "greet".
+It should take a name as input and return a greeting string.
+
+Create a main function that:
+1. Calls calculate_sum with numbers 5 and 3 and stores the result
+2. Calls greet with the name "DSHPC" and stores the message
+3. Prints both the result and the message
+
+Run the main function. 

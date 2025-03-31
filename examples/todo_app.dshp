@@ -1,0 +1,10 @@
+Create a simple command-line TODO application with the following features:
+- Add a new task with a description and priority (high, medium, low)
+- List all tasks sorted by priority
+- Mark a task as completed
+- Delete a task
+- Save tasks to a file and load them when the program starts
+- Display a menu with options for the user to choose from
+
+The application should keep running until the user chooses to exit.
+Make sure to handle invalid inputs gracefully. 

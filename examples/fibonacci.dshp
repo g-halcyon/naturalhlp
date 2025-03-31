@@ -1,0 +1,4 @@
+Create a function that calculates the nth Fibonacci number recursively.
+Create another function that calculates the nth Fibonacci number iteratively using a loop.
+Compare the execution time of both methods for calculating the 30th Fibonacci number.
+Print both results and the execution time for each method. 
