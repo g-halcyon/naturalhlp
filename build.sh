@@ -1,107 +1,110 @@
 #!/bin/bash
-set -e
 
-# Colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+# ANSI color codes
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+YELLOW="\033[0;33m"
+BLUE="\033[0;34m"
+MAGENTA="\033[0;35m"
+CYAN="\033[0;36m"
+RESET="\033[0m"
 
-# Display help
-show_help() {
-    echo -e "${YELLOW}Superior High-Level Programming Language Compiler Build Script${NC}"
-    echo ""
-    echo "Usage: $0 [OPTIONS]"
-    echo ""
-    echo "Options:"
-    echo "  --help            Display this help message"
-    echo "  --build           Build the compiler"
-    echo "  --install         Build and install the compiler"
-    echo "  --docker          Build Docker image"
-    echo "  --run FILE        Compile a .dshp file"
-    echo "  --clean           Clean build artifacts"
-    echo ""
-    echo "Examples:"
-    echo "  $0 --build"
-    echo "  $0 --run examples/hello_world.dshp"
+# Function to print colored text
+print_color() {
+    echo -e "${1}${2}${RESET}"
 }
 
-# Build the project
-build() {
-    echo -e "${GREEN}Building dshpc...${NC}"
-    cargo build --release
-    echo -e "${GREEN}Build complete. Binary available at target/release/dshpc${NC}"
+# Function to check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
 }
 
-# Install the compiler
-install() {
-    echo -e "${GREEN}Building and installing dshpc...${NC}"
-    cargo install --path .
-    echo -e "${GREEN}Installation complete.${NC}"
-}
+# Print header
+print_color "$BLUE" "========================================"
+print_color "$BLUE" "  Natural High Level Programming Language"
+print_color "$BLUE" "  Build Script"
+print_color "$BLUE" "========================================"
+echo
 
-# Build Docker image
-build_docker() {
-    echo -e "${GREEN}Building Docker image...${NC}"
-    docker build -t dshpc .
-    echo -e "${GREEN}Docker image built. Run with: docker run -v \$(pwd):/app dshpc your_file.dshp${NC}"
-}
-
-# Run the compiler on a file
-run_file() {
-    if [ ! -f "$1" ]; then
-        echo -e "${RED}Error: File $1 does not exist${NC}"
-        exit 1
-    fi
-
-    if [ ! -f "target/release/dshpc" ]; then
-        echo -e "${YELLOW}Compiler not found. Building first...${NC}"
-        build
-    fi
-
-    echo -e "${GREEN}Compiling $1...${NC}"
-    ./target/release/dshpc "$1"
-}
-
-# Clean build artifacts
-clean() {
-    echo -e "${GREEN}Cleaning build artifacts...${NC}"
-    cargo clean
-    echo -e "${GREEN}Clean complete.${NC}"
-}
-
-# Main logic
-if [ $# -eq 0 ]; then
-    show_help
-    exit 0
+# Check for Rust/Cargo
+if ! command_exists cargo; then
+    print_color "$RED" "Error: Rust and Cargo are required but not installed."
+    print_color "$YELLOW" "Please install Rust by following the instructions at: https://www.rust-lang.org/tools/install"
+    exit 1
 fi
 
-case "$1" in
-    --help)
-        show_help
-        ;;
-    --build)
-        build
-        ;;
-    --install)
-        install
-        ;;
-    --docker)
-        build_docker
-        ;;
-    --run)
-        if [ -z "$2" ]; then
-            echo -e "${RED}Error: No file specified for --run${NC}"
-            exit 1
-        fi
-        run_file "$2"
-        ;;
-    --clean)
-        clean
-        ;;
-    *)
-        echo -e "${RED}Unknown option: $1${NC}"
-        show_help
-        exit 1
-        ;;
-esac 
+# Check for environment variables
+if [ ! -f ".env" ]; then
+    print_color "$YELLOW" "Warning: .env file not found. Creating a template..."
+    echo "GEMINI_API_KEY=your_api_key_here" > .env
+    print_color "$YELLOW" "Please edit the .env file and add your Gemini API key."
+fi
+
+# Build the project
+print_color "$CYAN" "Building the NHLP compiler..."
+cargo build --release
+
+if [ $? -ne 0 ]; then
+    print_color "$RED" "Build failed! Please check the errors above."
+    exit 1
+fi
+
+print_color "$GREEN" "Build successful!"
+
+# Create symbolic link
+print_color "$CYAN" "Creating symbolic link for easy access..."
+if [ -f "target/release/nhlp" ]; then
+    if [ -f "./nhlp" ]; then
+        rm ./nhlp
+    fi
+    ln -s "$(pwd)/target/release/nhlp" ./nhlp
+    print_color "$GREEN" "Symbolic link created. You can now use './nhlp' to run the compiler."
+else
+    print_color "$RED" "Error: Compiled binary not found at expected location."
+    exit 1
+fi
+
+# Print usage instructions
+print_color "$MAGENTA" "Usage Instructions:"
+print_color "$YELLOW" "  ./nhlp input.dshp        # Compile a .dshp file to C++"
+print_color "$YELLOW" "  ./nhlp input.dshp -l rust # Compile to Rust instead"
+print_color "$YELLOW" "  ./nhlp input.dshp -r     # Compile and run the code"
+print_color "$YELLOW" "  ./nhlp -h                # Show help"
+
+# Check for dependencies based on supported target languages
+echo
+print_color "$CYAN" "Checking for target language compilers/tools..."
+
+# Check for C++ compiler (g++ or clang++)
+if command_exists g++; then
+    print_color "$GREEN" "✓ g++ found (C++ target support)"
+elif command_exists clang++; then
+    print_color "$GREEN" "✓ clang++ found (C++ target support)"
+else
+    print_color "$YELLOW" "⚠ No C++ compiler found. Install g++ or clang++ for C++ target support."
+fi
+
+# Check for Rust compiler
+if command_exists rustc; then
+    print_color "$GREEN" "✓ rustc found (Rust target support)"
+else
+    print_color "$YELLOW" "⚠ rustc not found. Install Rust for Rust target support."
+fi
+
+# Check for NASM (assembly support)
+if command_exists nasm; then
+    print_color "$GREEN" "✓ nasm found (Assembly target support)"
+else
+    print_color "$YELLOW" "⚠ nasm not found. Install NASM for Assembly target support."
+fi
+
+# Check for ld (linker for assembly)
+if command_exists ld; then
+    print_color "$GREEN" "✓ ld found (Assembly target support)"
+else
+    print_color "$YELLOW" "⚠ ld not found. Install binutils for Assembly target support."
+fi
+
+echo
+print_color "$GREEN" "Setup complete! You can now use the NHLP compiler."
+print_color "$BLUE" "For more information, see the README.md file." 

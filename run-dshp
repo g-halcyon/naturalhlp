@@ -1,0 +1,30 @@
+#!/bin/bash
+# NHLP direct execution script
+# This script allows running .dshp files directly
+
+# Check if a file was provided
+if [ -z "$1" ]; then
+    echo "Error: No .dshp file specified."
+    echo "Usage: run-dshp filename.dshp [options]"
+    exit 1
+fi
+
+# Get the absolute path to this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Find the NHLP interpreter - try several locations
+NHLP_INTERPRETER=""
+if [ -f "$SCRIPT_DIR/nhlp" ]; then
+    NHLP_INTERPRETER="$SCRIPT_DIR/nhlp"
+elif [ -f "$SCRIPT_DIR/target/release/nhlp" ]; then
+    NHLP_INTERPRETER="$SCRIPT_DIR/target/release/nhlp"
+elif command -v nhlp > /dev/null 2>&1; then
+    NHLP_INTERPRETER="nhlp"
+else
+    echo "Error: Could not find the NHLP interpreter."
+    echo "Please build the interpreter with 'cargo build --release' first."
+    exit 1
+fi
+
+# Run the file directly
+$NHLP_INTERPRETER "$@" 

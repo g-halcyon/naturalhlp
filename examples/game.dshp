@@ -1,0 +1,14 @@
+Create a simple text-based adventure game with the following features:
+
+1. The game should have at least 3 different rooms or locations.
+2. Each location should have a description that displays when the player enters it.
+3. The player should be able to move between locations using commands like "north", "south", "east", and "west".
+4. There should be at least 2 items that the player can interact with.
+5. The player should be able to pick up items and add them to their inventory.
+6. The player should be able to use items to solve a simple puzzle or obstacle.
+7. The game should have a clear objective or goal that the player can achieve to win.
+8. Include a help command that explains the available actions.
+9. Implement a "quit" command to exit the game.
+10. Add a simple scoring system based on the player's progress or actions.
+
+The game should start with a welcome message and a brief introduction that explains the premise of the adventure. All user input should be converted to lowercase for easier processing. The game should continue running until the player either wins, quits, or reaches a game over condition. 

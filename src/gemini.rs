@@ -3,9 +3,9 @@ use dotenv::dotenv;
 use log::{debug, error, info};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
+use serde_json::{self, json};
 use std::env;
 use std::fs;
-use std::path::Path;
 use thiserror::Error;
 
 // Error types for the Gemini API
@@ -179,5 +179,105 @@ impl GeminiClient {
             let code = "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}";
             return code.to_string();
         }
+    }
+
+    /// Execute code directly using Gemini AI
+    pub fn execute_code(&self, prompt: &str) -> Result<String> {
+        debug!("Sending execution request to Gemini");
+        
+        // Prepare the request payload
+        let payload = json!({
+            "contents": [{
+                "parts": [{
+                    "text": prompt
+                }]
+            }],
+            "generationConfig": {
+                "temperature": 0.2,
+                "topP": 0.8,
+                "topK": 40,
+                "maxOutputTokens": 8192
+            }
+        });
+
+        // Send the request
+        let response = self.send_request(payload)?;
+        
+        // Extract the response text
+        let response_text = self.extract_text_from_response(&response)?;
+        
+        info!("Execution completed successfully");
+        Ok(response_text)
+    }
+
+    /// Send a request to the Gemini API
+    fn send_request(&self, payload: serde_json::Value) -> Result<serde_json::Value> {
+        // If in demo mode, return predefined examples
+        if self.demo_mode {
+            return Ok(json!({
+                "candidates": [{
+                    "content": {
+                        "parts": [{
+                            "text": "Hello, World!\nThe sum of 5 and 10 is 15.\nProgram completed successfully."
+                        }]
+                    }
+                }]
+            }));
+        }
+        
+        // Send the request to the Gemini API
+        let url = format!(
+            "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key={}",
+            self.api_key
+        );
+        
+        let response = self.client
+            .post(&url)
+            .json(&payload)
+            .send()
+            .with_context(|| "Failed to send request to Gemini API")?;
+        
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().unwrap_or_else(|_| "Unknown error".to_string());
+            error!("API request failed with status {}: {}", status, error_text);
+            return Err(GeminiError::RequestFailed(error_text).into());
+        }
+        
+        // Parse the response to JSON
+        let response_json: serde_json::Value = response
+            .json()
+            .with_context(|| "Failed to parse Gemini API response")?;
+        
+        Ok(response_json)
+    }
+
+    /// Extract text from the Gemini API response
+    fn extract_text_from_response(&self, response: &serde_json::Value) -> Result<String> {
+        // Extract the generated response text
+        let candidates = response.get("candidates")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| GeminiError::ParseError("No candidates in response".to_string()))?;
+        
+        if candidates.is_empty() {
+            return Err(GeminiError::ParseError("Empty candidates array".to_string()).into());
+        }
+        
+        let content = candidates[0].get("content")
+            .ok_or_else(|| GeminiError::ParseError("No content in candidate".to_string()))?;
+        
+        let parts = content.get("parts")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| GeminiError::ParseError("No parts in content".to_string()))?;
+        
+        if parts.is_empty() {
+            return Err(GeminiError::ParseError("Empty parts array".to_string()).into());
+        }
+        
+        let text = parts[0].get("text")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| GeminiError::ParseError("No text in part".to_string()))?;
+        
+        Ok(text.to_string())
     }
 } 

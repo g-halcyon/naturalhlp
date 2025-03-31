@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use dotenv::dotenv;
 use log::{error, info, warn};
 use std::path::PathBuf;
@@ -7,43 +7,18 @@ use std::path::PathBuf;
 mod compiler;
 mod gemini;
 
-use compiler::{Compiler, TargetLanguage};
-
-#[derive(Debug, Clone, Copy, ValueEnum)]
-enum OutputLanguage {
-    Cpp,
-    Rust,
-    Assembly,
-}
-
-impl From<OutputLanguage> for TargetLanguage {
-    fn from(lang: OutputLanguage) -> Self {
-        match lang {
-            OutputLanguage::Cpp => TargetLanguage::Cpp,
-            OutputLanguage::Rust => TargetLanguage::Rust,
-            OutputLanguage::Assembly => TargetLanguage::Assembly,
-        }
-    }
-}
+use compiler::Compiler;
 
 #[derive(Parser, Debug)]
 #[clap(
-    name = "dshpc",
-    about = "Superior High-Level Programming Language Compiler",
+    name = "nhlp",
+    about = "Natural High Level Programming Language Native Compiler",
     version
 )]
 struct Args {
     /// Input .dshp file
     #[clap(required = true)]
     input_file: PathBuf,
-
-    /// Output file path
-    #[clap(short, long)]
-    output: Option<PathBuf>,
-
-    /// Target language
-    #[clap(short, long, value_enum)]
-    language: Option<OutputLanguage>,
 
     /// Verbose output
     #[clap(short, long)]
@@ -55,14 +30,16 @@ fn main() -> Result<()> {
     dotenv().ok();
     
     // Initialize logging
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "info");
+    }
     env_logger::init();
+    
     let args = Args::parse();
 
     if args.verbose {
-        println!("Superior High-Level Programming Language Compiler");
+        println!("Natural High Level Programming Language Native Compiler");
         println!("Input file: {:?}", args.input_file);
-        println!("Output file: {:?}", args.output);
-        println!("Target language: {:?}", args.language);
     }
 
     // Validate input file
@@ -73,16 +50,7 @@ fn main() -> Result<()> {
     if args.input_file.extension().unwrap_or_default() != "dshp" {
         warn!("Input file does not have .dshp extension");
     }
-
-    // Determine target language and output path
-    let (target_language, output_path) = determine_language_and_output(&args);
     
-    info!("Compiling {:?} to {:?} ({})", 
-        args.input_file, 
-        output_path,
-        target_language.as_str()
-    );
-
     // Initialize the compiler
     let compiler = match Compiler::new() {
         Ok(compiler) => compiler,
@@ -91,52 +59,19 @@ fn main() -> Result<()> {
             return Err(e);
         }
     };
-
-    // Compile the code
-    match compiler.compile(&args.input_file, &output_path, target_language) {
+    
+    // Compile directly to native code and execute
+    info!("Compiling and executing: {:?}", args.input_file);
+    match compiler.execute(&args.input_file) {
         Ok(_) => {
-            println!("Successfully compiled to {:?}", output_path);
+            if args.verbose {
+                println!("Program executed successfully.");
+            }
             Ok(())
         }
         Err(e) => {
-            error!("Compilation failed: {}", e);
+            error!("Compilation or execution failed: {}", e);
             Err(e)
         }
     }
-}
-
-/// Determine the target language and output file path based on CLI arguments
-fn determine_language_and_output(args: &Args) -> (TargetLanguage, PathBuf) {
-    // Start with the provided language or default to C++
-    let target_language = if let Some(lang) = args.language {
-        lang.into()
-    } else {
-        // If language not specified but output file is, try to detect from extension
-        if let Some(ref output) = args.output {
-            if let Some(ext) = output.extension() {
-                if let Some(lang) = TargetLanguage::from_extension(ext.to_string_lossy().as_ref()) {
-                    info!("Auto-detected target language: {} from output file extension", lang.as_str());
-                    lang
-                } else {
-                    warn!("Could not detect language from output file extension, defaulting to C++");
-                    TargetLanguage::Cpp
-                }
-            } else {
-                TargetLanguage::Cpp
-            }
-        } else {
-            TargetLanguage::Cpp
-        }
-    };
-
-    // Determine output path
-    let output_path = match &args.output {
-        Some(path) => path.clone(),
-        None => {
-            let file_stem = args.input_file.file_stem().unwrap_or_default();
-            PathBuf::from(format!("{}.{}", file_stem.to_string_lossy(), target_language.extension()))
-        }
-    };
-
-    (target_language, output_path)
 }

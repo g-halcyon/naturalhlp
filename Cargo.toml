@@ -7,10 +7,13 @@ description = "Natural High Level Programming Language - A compiler that transla
 license-file = "LICENSE.md"
 
 [dependencies]
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.11", features = ["json", "blocking"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 clap = { version = "4.4", features = ["derive"] }
 log = "0.4"
 env_logger = "0.10"
 dotenv = "0.15"
+anyhow = "1.0"
+thiserror = "1.0"
+tempfile = "3.8"

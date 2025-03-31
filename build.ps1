@@ -1,107 +1,133 @@
-#
-# Superior High-Level Programming Language Compiler Build Script (PowerShell)
-#
+# Natural High Level Programming Language Build Script
 
-# Colors for output
-$Green = [ConsoleColor]::Green
-$Yellow = [ConsoleColor]::Yellow
-$Red = [ConsoleColor]::Red
+# ANSI color codes for PowerShell
+$colors = @{
+    red = [System.Console]::ForegroundColor = "Red"
+    green = [System.Console]::ForegroundColor = "Green"
+    yellow = [System.Console]::ForegroundColor = "Yellow"
+    blue = [System.Console]::ForegroundColor = "Blue"
+    magenta = [System.Console]::ForegroundColor = "Magenta"
+    cyan = [System.Console]::ForegroundColor = "Cyan"
+    reset = [System.Console]::ResetColor()
+}
 
-# Display help
-function Show-Help {
-    Write-Host "Superior High-Level Programming Language Compiler Build Script" -ForegroundColor $Yellow
-    Write-Host ""
-    Write-Host "Usage: .\build.ps1 [OPTIONS]"
-    Write-Host ""
-    Write-Host "Options:"
-    Write-Host "  -Help            Display this help message"
-    Write-Host "  -Build           Build the compiler"
-    Write-Host "  -Install         Build and install the compiler"
-    Write-Host "  -Docker          Build Docker image"
-    Write-Host "  -Run FILE        Compile a .dshp file"
-    Write-Host "  -Clean           Clean build artifacts"
-    Write-Host ""
-    Write-Host "Examples:"
-    Write-Host "  .\build.ps1 -Build"
-    Write-Host "  .\build.ps1 -Run examples\hello_world.dshp"
+# Function to print colored text
+function Print-Color {
+    param(
+        [string]$color,
+        [string]$text
+    )
+    
+    $origColor = [System.Console]::ForegroundColor
+    [System.Console]::ForegroundColor = $color
+    Write-Host $text
+    [System.Console]::ForegroundColor = $origColor
+}
+
+# Function to check if a command exists
+function Test-Command {
+    param(
+        [string]$Command
+    )
+    
+    if (Get-Command $Command -ErrorAction SilentlyContinue) {
+        return $true
+    }
+    return $false
+}
+
+# Print header
+Print-Color "Blue" "========================================"
+Print-Color "Blue" "  Natural High Level Programming Language"
+Print-Color "Blue" "  Build Script"
+Print-Color "Blue" "========================================"
+Write-Host ""
+
+# Check for Rust/Cargo
+if (-not (Test-Command "cargo")) {
+    Print-Color "Red" "Error: Rust and Cargo are required but not installed."
+    Print-Color "Yellow" "Please install Rust by following the instructions at: https://www.rust-lang.org/tools/install"
+    exit 1
+}
+
+# Check for environment variables
+if (-not (Test-Path ".env")) {
+    Print-Color "Yellow" "Warning: .env file not found. Creating a template..."
+    "GEMINI_API_KEY=your_api_key_here" | Out-File -FilePath ".env" -Encoding utf8
+    Print-Color "Yellow" "Please edit the .env file and add your Gemini API key."
 }
 
 # Build the project
-function Build-Project {
-    Write-Host "Building dshpc..." -ForegroundColor $Green
-    cargo build --release
-    Write-Host "Build complete. Binary available at target\release\dshpc.exe" -ForegroundColor $Green
+Print-Color "Cyan" "Building the NHLP compiler..."
+cargo build --release
+
+if ($LASTEXITCODE -ne 0) {
+    Print-Color "Red" "Build failed! Please check the errors above."
+    exit 1
 }
 
-# Install the compiler
-function Install-Project {
-    Write-Host "Building and installing dshpc..." -ForegroundColor $Green
-    cargo install --path .
-    Write-Host "Installation complete." -ForegroundColor $Green
+Print-Color "Green" "Build successful!"
+
+# Create symbolic link or copy binary for easy access
+Print-Color "Cyan" "Creating executable for easy access..."
+if (Test-Path "target\release\nhlp.exe") {
+    if (Test-Path ".\nhlp.exe") {
+        Remove-Item ".\nhlp.exe"
+    }
+    Copy-Item "target\release\nhlp.exe" ".\nhlp.exe"
+    Print-Color "Green" "Executable copied. You can now use '.\nhlp.exe' to run the compiler."
+}
+else {
+    Print-Color "Red" "Error: Compiled binary not found at expected location."
+    exit 1
 }
 
-# Build Docker image
-function Build-Docker {
-    Write-Host "Building Docker image..." -ForegroundColor $Green
-    docker build -t dshpc .
-    Write-Host "Docker image built. Run with: docker run -v ${PWD}:/app dshpc your_file.dshp" -ForegroundColor $Green
+# Print usage instructions
+Print-Color "Magenta" "Usage Instructions:"
+Print-Color "Yellow" "  .\nhlp.exe input.dshp        # Compile a .dshp file to C++"
+Print-Color "Yellow" "  .\nhlp.exe input.dshp -l rust # Compile to Rust instead"
+Print-Color "Yellow" "  .\nhlp.exe input.dshp -r     # Compile and run the code"
+Print-Color "Yellow" "  .\nhlp.exe -h                # Show help"
+
+# Check for dependencies based on supported target languages
+Write-Host ""
+Print-Color "Cyan" "Checking for target language compilers/tools..."
+
+# Check for C++ compiler (g++ or clang++)
+if (Test-Command "g++") {
+    Print-Color "Green" "✓ g++ found (C++ target support)"
+}
+elseif (Test-Command "clang++") {
+    Print-Color "Green" "✓ clang++ found (C++ target support)"
+}
+else {
+    Print-Color "Yellow" "⚠ No C++ compiler found. Install g++ or clang++ for C++ target support."
 }
 
-# Run the compiler on a file
-function Run-File($file) {
-    if (-not (Test-Path $file)) {
-        Write-Host "Error: File $file does not exist" -ForegroundColor $Red
-        exit 1
-    }
-
-    if (-not (Test-Path "target\release\dshpc.exe")) {
-        Write-Host "Compiler not found. Building first..." -ForegroundColor $Yellow
-        Build-Project
-    }
-
-    Write-Host "Compiling $file..." -ForegroundColor $Green
-    .\target\release\dshpc.exe $file
+# Check for Rust compiler
+if (Test-Command "rustc") {
+    Print-Color "Green" "✓ rustc found (Rust target support)"
+}
+else {
+    Print-Color "Yellow" "⚠ rustc not found. Install Rust for Rust target support."
 }
 
-# Clean build artifacts
-function Clean-Project {
-    Write-Host "Cleaning build artifacts..." -ForegroundColor $Green
-    cargo clean
-    Write-Host "Clean complete." -ForegroundColor $Green
+# Check for NASM (assembly support)
+if (Test-Command "nasm") {
+    Print-Color "Green" "✓ nasm found (Assembly target support)"
+}
+else {
+    Print-Color "Yellow" "⚠ nasm not found. Install NASM for Assembly target support."
 }
 
-# Main logic
-if ($args.Count -eq 0) {
-    Show-Help
-    exit 0
+# Check for ld (linker for assembly)
+if (Test-Command "ld") {
+    Print-Color "Green" "✓ ld found (Assembly target support)"
+}
+else {
+    Print-Color "Yellow" "⚠ ld not found. Install binutils for Assembly target support."
 }
 
-switch ($args[0]) {
-    "-Help" {
-        Show-Help
-    }
-    "-Build" {
-        Build-Project
-    }
-    "-Install" {
-        Install-Project
-    }
-    "-Docker" {
-        Build-Docker
-    }
-    "-Run" {
-        if ($args.Count -lt 2) {
-            Write-Host "Error: No file specified for -Run" -ForegroundColor $Red
-            exit 1
-        }
-        Run-File $args[1]
-    }
-    "-Clean" {
-        Clean-Project
-    }
-    default {
-        Write-Host "Unknown option: $($args[0])" -ForegroundColor $Red
-        Show-Help
-        exit 1
-    }
-} 
+Write-Host ""
+Print-Color "Green" "Setup complete! You can now use the NHLP compiler."
+Print-Color "Blue" "For more information, see the README.md file." 

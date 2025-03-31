@@ -1,0 +1,12 @@
+Create a simple calculator program that can perform basic arithmetic operations.
+
+First, ask the user to enter two numbers.
+Then ask the user to choose an operation: add, subtract, multiply, or divide.
+Perform the selected operation on the two numbers.
+Display the result with an appropriate message.
+
+If the user selects division and the second number is zero, display an error message saying "Error: Division by zero is not allowed."
+
+After showing the result, ask the user if they want to perform another calculation (yes/no).
+If they say yes, repeat the process.
+If they say no, display a goodbye message and end the program. 
