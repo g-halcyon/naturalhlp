@@ -17,3 +17,9 @@ dotenv = "0.15"
 anyhow = "1.0"
 thiserror = "1.0"
 tempfile = "3.8"
+# NLMC dependencies
+inkwell = { version = "0.4", features = ["llvm17-0"] }
+regex = "1.10"
+uuid = { version = "1.0", features = ["v4"] }
+petgraph = "0.6"
+dashmap = "5.5"
