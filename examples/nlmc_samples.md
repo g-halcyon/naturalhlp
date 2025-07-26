@@ -2,7 +2,7 @@
 
 This document demonstrates the revolutionary NLMC compiler's ability to transform natural language descriptions directly into optimized machine code.
 
-## Sample 1: Simple Arithmetic
+## Sample 1: Simple Variable Assignment
 
 ### Natural Language Input:
 ```

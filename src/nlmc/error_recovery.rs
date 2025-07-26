@@ -28,6 +28,8 @@ pub struct CompilationError {
 pub enum ErrorType {
     SyntaxError,
     SemanticError,
+    TypeError,
+    RuntimeError,
     TypeMismatch,
     UndefinedReference,
     AmbiguityResolutionFailure,
